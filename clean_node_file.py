@@ -1,12 +1,13 @@
 import pandas as pd
+import os
 
-def clean_node_file(city_name):
-    # Construct file paths
-    input_file_path = f'/mnt/data/{city_name}_node.tntp'
+def clean_node_file(file_path):
+    # Extract the city name from the file path
+    city_name = os.path.basename(file_path).replace('_node.tntp', '')
     output_csv_path = f'/mnt/data/{city_name}_node_cleaned.csv'
     
     # Read the data file and clean it
-    with open(input_file_path, 'r') as file:
+    with open(file_path, 'r') as file:
         lines = file.readlines()
 
     # Process the lines to extract relevant data
@@ -27,15 +28,26 @@ def clean_node_file(city_name):
     columns = ["Node", "X", "Y"]
     df = pd.DataFrame(data, columns=columns)
 
+    # Remove duplicate rows based on all columns
+    df = df.drop_duplicates(subset=columns)
+
     # Save the cleaned data to a CSV file
     df.to_csv(output_csv_path, index=False)
     
     print(f"Cleaned data exported to: {output_csv_path}")
 
-# Example usage
-city_name = 'berlin-center'
-clean_node_file(city_name)
+def batch_process_node_files(directory):
+    # List all files in the directory
+    files = os.listdir(directory)
+    
+    # Filter files ending with _node.tntp
+    node_files = [f for f in files if f.endswith('_node.tntp')]
+    
+    # Process each node file
+    for node_file in node_files:
+        file_path = os.path.join(directory, node_file)
+        clean_node_file(file_path)
 
-# Display the first 5 rows of the cleaned data
-df = pd.read_csv(f'/mnt/data/{city_name}_node_cleaned.csv')
-df.head()
+# Specify the directory to look for _node.tntp files
+directory = '/mnt/data/'
+batch_process_node_files(directory)
