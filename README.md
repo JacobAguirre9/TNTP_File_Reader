@@ -207,5 +207,77 @@ def batch_process_trips_files(input_directory, output_directory):
 input_directory = '/mnt/data/'
 output_directory = '/mnt/data/cleaned/'
 batch_process_trips_files(input_directory, output_directory)
+```
+### `batch_process_node_conversion_files`
 
+This function scans a specified directory for files ending with `_Node-Conversion.txt`, cleans them by removing headers, unwanted lines, and malformed data, and then exports the cleaned data to a user-specified directory.
 
+#### How it works
+
+1. Lists all files in the specified input directory.
+2. Filters the files to include only those ending with `_Node-Conversion.txt`.
+3. For each filtered file:
+   - Reads the data from the file.
+   - Skips the header line.
+   - Parses the new and original node numbers.
+   - Converts the data into a DataFrame with specified column names.
+   - Removes any malformed lines.
+   - Exports the cleaned DataFrame to a CSV file in the user-specified output directory.
+
+#### How to use it
+
+1. Ensure your `.txt` files are in the input directory.
+2. Call the `batch_process_node_conversion_files` function with the input and output directory paths.
+
+Example usage:
+
+```python
+import os
+import pandas as pd
+
+def clean_node_conversion_file(file_path, output_directory):
+    try:
+        with open(file_path, 'r') as file:
+            lines = file.readlines()
+        
+        data = []
+        for line in lines[1:]:
+            line = line.strip()
+            if line:
+                parts = line.split()
+                if len(parts) == 2:
+                    new_node, original_node = parts
+                    try:
+                        new_node = int(new_node)
+                        original_node = int(original_node)
+                        data.append([new_node, original_node])
+                    except ValueError:
+                        print(f"Skipping malformed line: {line}")
+        
+        df = pd.DataFrame(data, columns=["New node number", "Original node number"])
+        
+        if not os.path.exists(output_directory):
+            os.makedirs(output_directory)
+        
+        output_csv_path = os.path.join(output_directory, os.path.basename(file_path).replace('.txt', '_cleaned.csv'))
+        df.to_csv(output_csv_path, index=False)
+        
+        print(f"Cleaned data exported to: {output_csv_path}")
+    except Exception as e:
+        print(f"Failed to process {file_path}: {e}")
+
+def batch_process_node_conversion_files(input_directory, output_directory):
+    try:
+        files = os.listdir(input_directory)
+        conversion_files = [f for f in files if f.endswith('_Node-Conversion.txt')]
+        for conversion_file in conversion_files:
+            file_path = os.path.join(input_directory, conversion_file)
+            clean_node_conversion_file(file_path, output_directory)
+    except Exception as e:
+        print(f"Failed to process batch: {e}")
+
+# Example usage
+input_directory = '/mnt/data/'
+output_directory = '/mnt/data/cleaned/'
+batch_process_node_conversion_files(input_directory, output_directory)
+```
