@@ -65,6 +65,6 @@ def batch_process_flow_files(input_directory, output_directory):
         print(f"Failed to process batch: {e}")
 
 # Example usage
-input_directory = '/mnt/data/'
-output_directory = '/mnt/data/cleaned/'
+input_directory = 'TransportationNetworks/_flow'
+output_directory = 'TransportationNetworks/_flow_cleaned'
 batch_process_flow_files(input_directory, output_directory)

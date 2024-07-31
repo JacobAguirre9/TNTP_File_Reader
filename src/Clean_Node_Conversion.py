@@ -9,23 +9,43 @@ def clean_node_file(file_path, output_directory):
             city_name = city_name.replace('_node.tntp', '')
         elif city_name.endswith('_Nodes.tntp'):
             city_name = city_name.replace('_Nodes.tntp', '')
-        
+        elif city_name.endswith('_nodes.tntp'):
+            city_name = city_name.replace('_nodes.tntp', '')
+
         output_csv_path = os.path.join(output_directory, f'{city_name}_node_cleaned.csv')
 
         # Read the data file
         with open(file_path, 'r') as file:
             lines = file.readlines()
 
-        # Check if the first line is a header and skip it if necessary
-        if 'NodeID' in lines[0]:
+        # Detect and remove the header line, if present
+        header = None
+        if 'Node' in lines[0] or 'node' in lines[0]:
+            header = lines[0].strip().strip(';').split()
             lines = lines[1:]
 
-        # Convert the remaining lines to a DataFrame
-        data = [line.split() for line in lines]
-        df = pd.DataFrame(data, columns=["Node", "X", "Y"])
+        # Handle different delimiters and trailing semicolons
+        data = []
+        for line in lines:
+            line = line.strip().strip(';')  # Remove trailing semicolons and whitespace
+            if line:
+                data.append(line.split())
+
+        # Determine the number of columns dynamically
+        if header:
+            columns = header
+        else:
+            num_columns = len(data[0])
+            if num_columns == 3:
+                columns = ["Node", "X", "Y"]
+            else:
+                raise ValueError(f"Unexpected number of columns: {num_columns}")
+
+        # Create a DataFrame with the appropriate columns
+        df = pd.DataFrame(data, columns=columns)
 
         # Remove duplicate rows based on all columns
-        df = df.drop_duplicates(subset=["Node", "X", "Y"])
+        df = df.drop_duplicates()
 
         # Ensure the output directory exists
         if not os.path.exists(output_directory):
@@ -43,8 +63,8 @@ def batch_process_node_files(input_directory, output_directory):
         # List all files in the input directory
         files = os.listdir(input_directory)
 
-        # Filter files ending with _node.tntp or _Nodes.tntp
-        node_files = [f for f in files if f.endswith('_node.tntp') or f.endswith('_Nodes.tntp')]
+        # Filter files ending with _node.tntp or _Nodes.tntp or _nodes.tntp
+        node_files = [file for file in files if file.endswith('_node.tntp') or file.endswith('_Nodes.tntp') or file.endswith('_nodes.tntp')]
 
         # Process each node file
         for node_file in node_files:
@@ -54,6 +74,6 @@ def batch_process_node_files(input_directory, output_directory):
         print(f"Failed to process batch: {e}")
 
 # Example usage
-input_directory = '/mnt/data/'
-output_directory = '/mnt/data/cleaned/'
-batch_process_node_conversion_files(input_directory, output_directory)
+input_directory = '/Users/jacobaguirre/Documents/Github Repositories/TNTP_File_Reader/TransportationNetworks/_01'
+output_directory = '/Users/jacobaguirre/Documents/Github Repositories/TNTP_File_Reader/TransportationNetworks/_node_cleaned'
+batch_process_node_files(input_directory, output_directory)

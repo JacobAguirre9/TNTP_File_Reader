@@ -2,12 +2,17 @@ using HTTP
 using Gumbo
 using Cascadia
 using Downloads
+using ProgressMeter
 
 # Function to download file
 function download_file(url, folder)
     local_filename = joinpath(folder, split(url, "/")[end])
-    Downloads.download(url, local_filename)
-    return local_filename
+    if !isfile(local_filename)
+        Downloads.download(url, local_filename)
+        return true
+    else
+        return false
+    end
 end
 
 # Function to create directories dynamically based on suffix
@@ -22,7 +27,12 @@ end
 
 # Function to extract suffix from filename
 function extract_suffix(filename)
-    return filename[findlast('_', filename):end]
+    parts = split(filename, "_")
+    if length(parts) > 2
+        return join(parts[1:2], "_") * ".tntp"
+    else
+        return filename[findlast('_', filename):end]
+    end
 end
 
 # Base URL of the GitHub repository
@@ -36,8 +46,8 @@ response = HTTP.get(base_url)
 soup = parsehtml(String(response.body))
 
 # Find all links to city folders in the repository
-city_links = eachmatch(Selector("a[href*='/tree/master/']"), soup.root)
-city_folders = [link.attributes["href"] for link in city_links if occursin("/tree/master/", link.attributes["href"])]
+city_links = eachmatch(Selector("a[href*='/TransportationNetworks/tree/master/']"), soup.root)
+city_folders = [link.attributes["href"] for link in city_links if occursin("/TransportationNetworks/tree/master/", link.attributes["href"])]
 
 # Dictionary to hold suffixes
 suffixes = Set{String}()
@@ -62,6 +72,12 @@ end
 # Create directories for each suffix
 create_directories(base_path, suffixes)
 
+# Calculate total number of files to be downloaded
+total_files = sum([length(eachmatch(Selector("a[href*='.tntp']"), parsehtml(String(HTTP.get("https://github.com" * city_folder).body)).root)) for city_folder in city_folders])
+
+# Initialize progress bar
+progress = Progress(total_files, 1)
+
 # Loop through city folders and download the relevant files
 for city_folder in city_folders
     city_url = "https://github.com" * city_folder
@@ -69,8 +85,7 @@ for city_folder in city_folders
     city_soup = parsehtml(String(city_response.body))
     file_links = eachmatch(Selector("a[href*='.tntp']"), city_soup.root)
     
-    total_files = length(file_links)
-    for (i, link) in enumerate(file_links)
+    for link in file_links
         file_url = link.attributes["href"]
         if endswith(file_url, ".tntp")
             # Extract the suffix and determine the folder
@@ -80,9 +95,13 @@ for city_folder in city_folders
             # Construct the full URL to the raw file
             raw_file_url = replace(file_url, "blob" => "raw")
             
-            # Download the file
-            download_file("https://github.com$raw_file_url", folder)
-            println("Downloaded $file_url to $folder ($i/$total_files)")
+            # Download the file if it doesn't already exist
+            if download_file("https://github.com$raw_file_url", folder)
+                println("Downloaded $file_url to $folder")
+            else
+                println("Skipped $file_url (already exists)")
+            end
+            next!(progress)
         end
     end
 end
