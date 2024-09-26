@@ -20,7 +20,6 @@ Should you have any comments or recommendations, please contact us at `first aut
   - [5. `organize_city_data.py`](#5-organize_city_datapy)
   - [6. `summary_statistics.py`](#6-summary_statisticspy)
 - [Usage](#usage)
-- [Additional Recommendations](#additional-recommendations)
 - [License](#license)
 
 ## Features
