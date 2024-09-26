@@ -1,1 +1,12 @@
+# Data handling and analysis
 pandas
+
+# Visualization libraries
+matplotlib
+seaborn
+
+# Progress tracking for loops
+tqdm
+
+# Graph handling (if network visualizations are needed)
+networkx
