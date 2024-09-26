@@ -63,10 +63,10 @@ Should you have any comments or recommendations, please contact us at `first aut
     networkx
     tqdm
     ```
-    To get the latest version, please use
-   '''python
+   To get the latest version, use
+   ```bash
    pip install --upgrade -r requirements.txt
-   '''
+   ```
 
 ## Scripts
 
